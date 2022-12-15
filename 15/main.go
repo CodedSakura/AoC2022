@@ -5,15 +5,11 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"time"
 )
 
 func main() {
-	fmt.Println(time.Now())
 	A()
-	fmt.Println(time.Now())
 	B()
-	fmt.Println(time.Now())
 }
 
 type pos struct {
