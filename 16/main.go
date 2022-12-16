@@ -10,7 +10,7 @@ import (
 
 func main() {
 	A()
-	// Template file
+	B()
 }
 
 type valve struct {
@@ -22,13 +22,63 @@ type valve struct {
 
 func solveA(aa *valve) int {
 	res := 0
+
+	var dfs func(v *valve, time, score int, discovered map[*valve]bool)
+	dfs = func(v *valve, time, score int, discovered map[*valve]bool) {
+		discovered[v] = true
+		for w, d := range v.tunnels {
+			if !discovered[w] {
+				t := time - d - 1
+				if t < 0 {
+					if score > res {
+						res = score
+					}
+					continue
+				}
+				s := score + t*w.flowRate
+				if s > res {
+					res = s
+				}
+				//fmt.Println(discovered)
+				dCopy := make(map[*valve]bool, len(discovered))
+				for k, w := range discovered {
+					dCopy[k] = w
+				}
+				dfs(w, t, s, dCopy)
+			}
+		}
+	}
+
+	discovered := make(map[*valve]bool)
+	dfs(aa, 30, 0, discovered)
+
+	return res
+}
+
+func solveB(aa *valve) int {
+	// me  ->  j b c
+	// ele -> d  h  e
+
+	maxRes := 0
 	counter := 0
 
-	var dfs func(v *valve, time, score int, discovered map[*valve]bool, depth int)
-	dfs = func(v *valve, time, score int, discovered map[*valve]bool, depth int) {
+	var dfs func(v *valve, time, score int, discovered map[*valve]bool, amElephant bool) int
+	dfs = func(v *valve, time, score int, discovered map[*valve]bool, amElephant bool) int {
+		res := 0
 		discovered[v] = true
-		if depth == 15 {
-			counter++
+		counter++
+		if counter%1_000_000 == 0 {
+			fmt.Println(counter)
+		}
+		if !amElephant {
+			dECopy := make(map[*valve]bool, len(discovered))
+			for k, w := range discovered {
+				dECopy[k] = w
+			}
+			eRes := dfs(aa, 26, score, dECopy, true)
+			if eRes > maxRes {
+				maxRes = eRes
+			}
 		}
 		for w, d := range v.tunnels {
 			if !discovered[w] {
@@ -48,38 +98,18 @@ func solveA(aa *valve) int {
 				for k, w := range discovered {
 					dCopy[k] = w
 				}
-				dfs(w, t, s, dCopy, depth+1)
+				s2 := dfs(w, t, s, dCopy, amElephant)
+				if s2 > res {
+					res = s2
+				}
 			}
 		}
+		return res
 	}
 
 	discovered := make(map[*valve]bool)
-	dfs(aa, 30, 0, discovered, 0)
-	fmt.Println(len(aa.tunnels))
-	fmt.Println(counter)
-
-	return res
-}
-
-func printGraph(aa *valve) {
-	visited := make(map[*valve]bool)
-	visited[aa] = true
-	queue := []*valve{aa}
-	for len(queue) > 0 {
-		var s *valve
-		s, queue = queue[0], queue[1:]
-		if s.flowRate == 0 {
-			fmt.Printf("%s [color=cyan,style=filled]\n", s.name)
-		}
-
-		for v, d := range s.tunnels {
-			fmt.Printf("%s -> %s [label=%d]\n", s.name, v.name, d)
-			if !visited[v] {
-				queue = append(queue, v)
-				visited[v] = true
-			}
-		}
-	}
+	dfs(aa, 26, 0, discovered, false)
+	return maxRes
 }
 
 func collapse(aa *valve) {
@@ -179,20 +209,38 @@ func A() {
 	}
 	aa := valveMap["AA"]
 
-	//f, err := os.Create("prof00.out")
-	//if err != nil {
-	//	log.Fatal("could not create CPU profile: ", err)
-	//}
-	//defer f.Close()
-	//if err := pprof.StartCPUProfile(f); err != nil {
-	//	log.Fatal("could not start CPU profile: ", err)
-	//}
-	//defer pprof.StopCPUProfile()
-
-	// (AA) DD BB JJ HH EE CC
-	//    0 20 13 21 22  3  2
-
 	collapse(aa)
 
 	fmt.Println(solveA(aa))
+}
+
+func B() {
+	re := regexp.MustCompile(`Valve (.+) has flow rate=(\d+); tunnels? leads? to valves? (.+)`)
+
+	valveMap := make(map[string]*valve)
+
+	for line := range utils.ReadDayByLine(16) {
+		res := re.FindStringSubmatch(line)[1:]
+		rate, _ := strconv.Atoi(res[1])
+		valveMap[res[0]] = &valve{
+			name:         res[0],
+			flowRate:     rate,
+			plainTunnels: strings.Split(res[2], ", "),
+		}
+	}
+
+	// setup tunnels
+	for _, v := range valveMap {
+		v.tunnels = make(map[*valve]int, len(v.plainTunnels))
+		for _, s := range v.plainTunnels {
+			v2 := valveMap[s]
+			v.tunnels[v2] = 1
+		}
+		v.plainTunnels = []string{}
+	}
+	aa := valveMap["AA"]
+
+	collapse(aa)
+
+	fmt.Println(solveB(aa))
 }
