@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -28,17 +27,17 @@ func solveA(aa *valve) int {
 	count := 0
 
 	nodes = append([]*valve{aa}, nodes...)
-	mat := make([][]int, len(nodes))
+	distanceMatrix := make([][]int, len(nodes))
 	for a, ka := range nodes {
-		mat[a] = make([]int, len(nodes))
+		distanceMatrix[a] = make([]int, len(nodes))
 		for b, kb := range nodes {
 			if ka == kb {
-				mat[a][b] = 0
+				distanceMatrix[a][b] = 0
 			} else {
-				mat[a][b] = ka.tunnels[kb]
+				distanceMatrix[a][b] = ka.tunnels[kb]
 			}
 		}
-		//fmt.Println(mat[a])
+		//fmt.Println(distanceMatrix[a])
 	}
 	//fmt.Println()
 	rates := make([]int, len(nodes))
@@ -51,76 +50,88 @@ func solveA(aa *valve) int {
 	//fmt.Println(keys)
 	//fmt.Println()
 
-	run := func(p []int, lCount *int) {
-		var cRes, cTime int
-		var cPos, nPos int
-		if *lCount%500_000_000 == 0 {
+	dp := make(map[[5]int][3]int)
+	getDist5 := func(prev int, p [5]int) (time, dScore, cScore int) {
+		if _, exists := dp[p]; exists {
+			tmp := dp[p]
+			return tmp[0], tmp[1], tmp[2]
+		}
+
+		var a [5][2]int
+		for i, nPos := range p {
+			time += distanceMatrix[prev][nPos] + 1
+			cScore += rates[nPos]
+			a[i] = [2]int{time, rates[nPos]}
+			prev = nPos
+		}
+		for _, v := range a {
+			dScore += (time - v[0]) * v[1]
+		}
+		dp[p] = [3]int{time, dScore, cScore}
+		return
+	}
+
+	run := func(p []int) {
+		count++
+		if count%10_000_000 == 0 {
 			fmt.Printf(
 				"[%s]: %d / %d (%f%%)\n",
-				time.Now().Format("15:04:05.000"), *lCount, 1307674368000/15, float64(*lCount)/(13076743680/15),
+				time.Now().Format("15:04:05.000"), count, 1307674368000, float64(count)/(13076743680),
 			)
+			//fmt.Println(utils.GetMapKeys(dp))
+			//panic("")
 		}
-		//if count == 1_000_000_000 {
-		//	panic("(:")
-		//}
-		*lCount++
+		cTime := 30
+		cRes := 0
 
-		cRes = 0
-		cTime = 30
-		cPos = 0
-		for _, nPos = range p {
-			cTime -= mat[cPos][nPos] + 1
-			if cTime < 0 {
-				break
-			}
-			//fmt.Printf("%d,", cTime*rates[nPos])
-			cRes += cTime * rates[nPos]
-			cPos = nPos
+		s1t, s1d, s1c := getDist5(0, *(*[5]int)(p[0:5]))
+		cTime -= s1t
+		if cTime < 0 {
+			return
 		}
-		//fmt.Println(p)
+		cRes += s1d + cTime*s1c
+
+		s2t, s2d, s2c := getDist5(0, *(*[5]int)(p[5:10]))
+		cTime -= s2t
+		if cTime < 0 {
+			return
+		}
+		cRes += s2d + cTime*s2c
+
+		s3t, s3d, s3c := getDist5(0, *(*[5]int)(p[10:15]))
+		cTime -= s3t
+		if cTime < 0 {
+			return
+		}
+		cRes += s3d + cTime*s3c
 
 		if cRes > res {
 			res = cRes
 		}
 	}
 
-	wg := sync.WaitGroup{}
 	keys = keys[1:]
-	permuteFixedLast := func(keys []int) {
-		defer wg.Done()
+	n := len(keys)
+	c := make([]int, n)
 
-		n := len(keys) - 1
-		c := make([]int, n)
+	i := 1
+	run(keys)
 
-		i := 1
-		lCount := 0
-		run(keys, &lCount)
-
-		for i < n {
-			if c[i] < i {
-				if i%2 == 0 {
-					keys[0], keys[i] = keys[i], keys[0]
-				} else {
-					keys[c[i]], keys[i] = keys[i], keys[c[i]]
-				}
-				run(keys, &lCount)
-				c[i]++
-				i = 1
+	for i < n {
+		if c[i] < i {
+			if i%2 == 0 {
+				keys[0], keys[i] = keys[i], keys[0]
 			} else {
-				c[i] = 0
-				i++
+				keys[c[i]], keys[i] = keys[i], keys[c[i]]
 			}
+			run(keys)
+			c[i]++
+			i = 1
+		} else {
+			c[i] = 0
+			i++
 		}
 	}
-
-	for i := range keys {
-		cKeys := make([]int, len(keys))
-		copy(cKeys, keys)
-		cKeys[i], cKeys[len(cKeys)-1] = cKeys[len(cKeys)-1], cKeys[i]
-		wg.Add(1)
-		go permuteFixedLast(cKeys)
-	}
-	wg.Wait()
 	fmt.Println(count)
 
 	return res
