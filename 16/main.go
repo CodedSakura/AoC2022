@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 )
 
 func main() {
@@ -23,116 +22,41 @@ type valve struct {
 
 func solveA(aa *valve) int {
 	res := 0
-	nodes := utils.GetMapKeys(aa.tunnels)
-	count := 0
+	counter := 0
 
-	nodes = append([]*valve{aa}, nodes...)
-	distanceMatrix := make([][]int, len(nodes))
-	for a, ka := range nodes {
-		distanceMatrix[a] = make([]int, len(nodes))
-		for b, kb := range nodes {
-			if ka == kb {
-				distanceMatrix[a][b] = 0
-			} else {
-				distanceMatrix[a][b] = ka.tunnels[kb]
+	var dfs func(v *valve, time, score int, discovered map[*valve]bool, depth int)
+	dfs = func(v *valve, time, score int, discovered map[*valve]bool, depth int) {
+		discovered[v] = true
+		if depth == 15 {
+			counter++
+		}
+		for w, d := range v.tunnels {
+			if !discovered[w] {
+				t := time - d - 1
+				if t < 0 {
+					if score > res {
+						res = score
+					}
+					continue
+				}
+				s := score + t*w.flowRate
+				if s > res {
+					res = s
+				}
+				//fmt.Println(discovered)
+				dCopy := make(map[*valve]bool, len(discovered))
+				for k, w := range discovered {
+					dCopy[k] = w
+				}
+				dfs(w, t, s, dCopy, depth+1)
 			}
 		}
-		//fmt.Println(distanceMatrix[a])
-	}
-	//fmt.Println()
-	rates := make([]int, len(nodes))
-	keys := make([]int, len(nodes))
-	for i, v := range nodes {
-		rates[i] = v.flowRate
-		keys[i] = i
-	}
-	//fmt.Println(rates)
-	//fmt.Println(keys)
-	//fmt.Println()
-
-	dp := make(map[[5]int][3]int)
-	getDist5 := func(prev int, p [5]int) (time, dScore, cScore int) {
-		if _, exists := dp[p]; exists {
-			tmp := dp[p]
-			return tmp[0], tmp[1], tmp[2]
-		}
-
-		var a [5][2]int
-		for i, nPos := range p {
-			time += distanceMatrix[prev][nPos] + 1
-			cScore += rates[nPos]
-			a[i] = [2]int{time, rates[nPos]}
-			prev = nPos
-		}
-		for _, v := range a {
-			dScore += (time - v[0]) * v[1]
-		}
-		dp[p] = [3]int{time, dScore, cScore}
-		return
 	}
 
-	run := func(p []int) {
-		count++
-		if count%10_000_000 == 0 {
-			fmt.Printf(
-				"[%s]: %d / %d (%f%%)\n",
-				time.Now().Format("15:04:05.000"), count, 1307674368000, float64(count)/(13076743680),
-			)
-			//fmt.Println(utils.GetMapKeys(dp))
-			//panic("")
-		}
-		cTime := 30
-		cRes := 0
-
-		s1t, s1d, s1c := getDist5(0, *(*[5]int)(p[0:5]))
-		cTime -= s1t
-		if cTime < 0 {
-			return
-		}
-		cRes += s1d + cTime*s1c
-
-		s2t, s2d, s2c := getDist5(0, *(*[5]int)(p[5:10]))
-		cTime -= s2t
-		if cTime < 0 {
-			return
-		}
-		cRes += s2d + cTime*s2c
-
-		s3t, s3d, s3c := getDist5(0, *(*[5]int)(p[10:15]))
-		cTime -= s3t
-		if cTime < 0 {
-			return
-		}
-		cRes += s3d + cTime*s3c
-
-		if cRes > res {
-			res = cRes
-		}
-	}
-
-	keys = keys[1:]
-	n := len(keys)
-	c := make([]int, n)
-
-	i := 1
-	run(keys)
-
-	for i < n {
-		if c[i] < i {
-			if i%2 == 0 {
-				keys[0], keys[i] = keys[i], keys[0]
-			} else {
-				keys[c[i]], keys[i] = keys[i], keys[c[i]]
-			}
-			run(keys)
-			c[i]++
-			i = 1
-		} else {
-			c[i] = 0
-			i++
-		}
-	}
-	fmt.Println(count)
+	discovered := make(map[*valve]bool)
+	dfs(aa, 30, 0, discovered, 0)
+	fmt.Println(len(aa.tunnels))
+	fmt.Println(counter)
 
 	return res
 }
