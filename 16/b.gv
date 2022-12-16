@@ -1,0 +1,18 @@
+digraph {
+    AA [color = cyan,style = filled]
+    AA -> DD
+    AA -> BB
+    AA -> JJ
+    DD -> AA
+    DD -> EE
+    DD -> CC
+    BB -> CC
+    BB -> AA
+    JJ -> AA
+    EE -> HH
+    EE -> DD
+    CC -> DD
+    CC -> BB
+    HH -> EE
+
+}
