@@ -54,3 +54,13 @@ func ChanToArr[T any](channel <-chan T) []T {
 
 	return res
 }
+
+func GetMapKeys[T comparable, V any](m map[T]V) []T {
+	res := make([]T, len(m))
+	i := 0
+	for k := range m {
+		res[i] = k
+		i++
+	}
+	return res
+}
