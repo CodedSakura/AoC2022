@@ -64,3 +64,11 @@ func GetMapKeys[T comparable, V any](m map[T]V) []T {
 	}
 	return res
 }
+
+func CopyMap[T comparable, V any](m map[T]V) map[T]V {
+	mCopy := make(map[T]V, len(m))
+	for k, w := range m {
+		mCopy[k] = w
+	}
+	return mCopy
+}

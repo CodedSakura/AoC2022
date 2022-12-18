@@ -11,6 +11,7 @@ import (
 
 func main() {
 	A()
+	// for some reason for my input the result is 10 less than it should be...
 	B()
 }
 
@@ -79,7 +80,7 @@ func solveB(aa *valve) int {
 
 	var dfs func(v *valve, time, score int, discovered map[*valve]bool, amElephant bool) int
 	dfs = func(v *valve, time, score int, discovered map[*valve]bool, amElephant bool) int {
-		res := 0
+		res := score
 		discovered[v] = true
 		counter++
 		if counter%1_000_000 == 0 {
@@ -137,7 +138,6 @@ func solveB(aa *valve) int {
 	discovered := make(map[*valve]bool)
 	dfs(aa, 26, 0, discovered, false)
 
-	fmt.Println(len(dp))
 	return maxRes
 }
 
