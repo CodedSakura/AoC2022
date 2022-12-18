@@ -4,6 +4,7 @@ import (
 	"AoC2022/utils"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -62,6 +63,20 @@ func solveB(aa *valve) int {
 	maxRes := 0
 	counter := 0
 
+	getDiscoveredKey := func(discovered map[*valve]bool) string {
+		var names []string
+		for k, d := range discovered {
+			if !d {
+				continue
+			}
+			names = append(names, k.name)
+		}
+		sort.Strings(names)
+		return strings.Join(names, ":")
+	}
+
+	dp := make(map[string]int)
+
 	var dfs func(v *valve, time, score int, discovered map[*valve]bool, amElephant bool) int
 	dfs = func(v *valve, time, score int, discovered map[*valve]bool, amElephant bool) int {
 		res := 0
@@ -71,11 +86,23 @@ func solveB(aa *valve) int {
 			fmt.Println(counter)
 		}
 		if !amElephant {
-			dECopy := make(map[*valve]bool, len(discovered))
-			for k, w := range discovered {
-				dECopy[k] = w
+			key := getDiscoveredKey(discovered)
+			var eRes int
+			if dpV, e := dp[key]; e {
+				eRes = score + dpV
+				if eRes > maxRes {
+					maxRes = eRes
+				}
+			} else {
+				dECopy := make(map[*valve]bool, len(discovered))
+				for k, w := range discovered {
+					dECopy[k] = w
+				}
+				eRes = dfs(aa, 26, 0, dECopy, true)
+				dp[key] = eRes
+				eRes += score
+				//eRes := dfs(aa, 26, score, dECopy, true)
 			}
-			eRes := dfs(aa, 26, score, dECopy, true)
 			if eRes > maxRes {
 				maxRes = eRes
 			}
@@ -109,6 +136,8 @@ func solveB(aa *valve) int {
 
 	discovered := make(map[*valve]bool)
 	dfs(aa, 26, 0, discovered, false)
+
+	fmt.Println(len(dp))
 	return maxRes
 }
 
