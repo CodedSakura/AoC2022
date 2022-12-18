@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"strconv"
 )
@@ -71,4 +72,14 @@ func CopyMap[T comparable, V any](m map[T]V) map[T]V {
 		mCopy[k] = w
 	}
 	return mCopy
+}
+
+func Max(values ...int) int {
+	m := math.MinInt
+	for _, value := range values {
+		if value > m {
+			m = value
+		}
+	}
+	return m
 }

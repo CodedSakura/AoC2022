@@ -3,7 +3,7 @@ package main
 import (
 	"AoC2022/utils"
 	"fmt"
-	"time"
+	"strings"
 )
 
 func main() {
@@ -145,15 +145,29 @@ func moveRock(fallingRock *rock, tower *[]byte, jets []int, jetIndex int) (didSe
 	return
 }
 
-//func printTower(tower []int) {
-//	for i := range tower {
-//		s := fmt.Sprintf("%07b", tower[len(tower)-1-i])
-//		s = strings.ReplaceAll(s, "0", ".")
-//		s = strings.ReplaceAll(s, "1", "#")
-//		fmt.Println(s)
-//	}
-//	fmt.Println()
-//}
+func printTower(tower []byte) {
+	for i := range tower {
+		s := fmt.Sprintf("%07b", tower[len(tower)-1-i])
+		s = strings.ReplaceAll(s, "0", ".")
+		s = strings.ReplaceAll(s, "1", "#")
+		fmt.Println(s)
+	}
+	fmt.Println()
+}
+
+func getTowerHeight(tower []byte) int {
+	top := len(tower) - 1
+	for tower[top] == 0 {
+		top--
+	}
+	top++
+	return top
+}
+func getTowerTop(tower []byte) [6]byte {
+	h := getTowerHeight(tower)
+	h = utils.Max(h-3, 0) + 3
+	return *(*[6]byte)(tower[h-3 : h+3])
+}
 
 func A() {
 	line := utils.ChanToArr(utils.ReadDayByLine(17))[0]
@@ -186,6 +200,11 @@ func A() {
 	fmt.Println(top)
 }
 
+type cache struct {
+	height, index int
+	towerTop      [6]byte
+}
+
 func B() {
 	line := utils.ChanToArr(utils.ReadDayByLine(17))[0]
 	jets := make([]int, len(line))
@@ -201,32 +220,33 @@ func B() {
 	jetIndex := 0
 	//tower := make([]byte, 1024*1024)
 	var tower []byte
-	//towerExtraHeight := 0
-	for i := 0; i < 1_000_000_000_000; i++ {
+	seen := make(map[[2]int]cache)
+	heightExtra := 0
+	const target = 1_000_000_000_000
+	//const target = 2022
+	for i := 0; i < target; i++ {
 		fRock := dropRock(&tower, pieceIndex)
-
-		if fRock.posY > 1024*1024-10 {
-			//	towerExtraHeight += 1024 * 512
-			tower = tower[1024*512:]
-			fRock.posY -= 1024 * 512
-			//	tower = append(tower, make([]byte, 1024*512)...)
-		}
 
 		for !moveRock(&fRock, &tower, jets, jetIndex) {
 			jetIndex++
 		}
 		jetIndex++
 		pieceIndex++
-
-		if i%50_000_000 == 0 {
-			fmt.Printf("[%s] %d / %d (%.03f%%)\n", time.Now().Format("15:04:05.000"), i, 1_000_000_000_000, float64(i)/float64(10_000_000_000))
+		jetIndex %= len(jets)
+		pieceIndex %= 5
+		key := [2]int{jetIndex, pieceIndex}
+		if h, e := seen[key]; e && heightExtra == 0 {
+			if h.towerTop != getTowerTop(tower) {
+				continue
+			}
+			iDiff := i - h.index
+			c := (target - i) / iDiff
+			heightExtra = c * (getTowerHeight(tower) - h.height)
+			i += c * iDiff
 		}
+
+		seen[key] = cache{getTowerHeight(tower), i, getTowerTop(tower)}
 	}
 
-	top := len(tower) - 1
-	for tower[top] == 0 {
-		top--
-	}
-	top++
-	fmt.Println(top)
+	fmt.Println(getTowerHeight(tower) + heightExtra)
 }
