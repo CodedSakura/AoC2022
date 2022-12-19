@@ -83,3 +83,8 @@ func Max(values ...int) int {
 	}
 	return m
 }
+
+func ParseInt(str string) int {
+	res, _ := strconv.Atoi(str)
+	return res
+}
