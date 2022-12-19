@@ -33,14 +33,9 @@ func processFactoryMinute(fac *factory) {
 }
 
 func processBlueprint(bp blueprint, time int) int {
-	count := 0
 	var dfs func(minute int, fac factory) factory
 	dfs = func(minute int, fac factory) factory {
 		if minute == time {
-			count++
-			if count%500_000_000 == 0 {
-				fmt.Println(count)
-			}
 			return fac
 		}
 		minute++
@@ -102,9 +97,7 @@ func processBlueprint(bp blueprint, time int) int {
 		return bestFac
 	}
 
-	maxGeodes := dfs(0, factory{oreRobots: 1}).geode
-
-	return maxGeodes
+	return dfs(0, factory{oreRobots: 1}).geode
 }
 
 func A() {
