@@ -257,10 +257,10 @@ func B() {
 	wraps := [][]int{
 		/*d x  y  d  x  y  >  <*/
 		{1, 1, 0, 1, 0, 2, 2, 2},
-		{0, 1, 0, 0, 0, 3, 1, 3},
+		{0, 1, 0, 1, 0, 3, 1, 3},
 		{0, 2, 0, 0, 0, 4, 0, 0},
 		{1, 3, 0, 1, 2, 2, 2, 2},
-		{0, 2, 1, 1, 2, 1, 3, 1},
+		{0, 2, 1, 1, 2, 1, 1, 3},
 		{1, 1, 1, 0, 0, 2, 3, 1},
 		{0, 1, 3, 1, 1, 3, 1, 3},
 	}
@@ -278,6 +278,7 @@ func B() {
 			y = (posY + 1) / size
 		}
 		var rd, rx, ry, rRot int
+		rRot = -1
 		for _, wrap := range wraps {
 			if wrap[0] == d && wrap[1] == x && wrap[2] == y {
 				rd = wrap[3]
@@ -296,7 +297,7 @@ func B() {
 		//printPos(board, posX, posY, rot)
 		//fmt.Println(d, x, y)
 		//fmt.Println(rd, rx, ry, rRot)
-		if rRot == 0 {
+		if rRot == -1 {
 			fmt.Println(posX, posY)
 			printPos(board, posX, posY, rot)
 			fmt.Println(d, x, y)
@@ -304,6 +305,7 @@ func B() {
 			panic(rRot)
 		}
 
+		rot = (rot + rRot) % 4
 		if d == rd {
 			if d == 0 {
 				if rRot == 2 {
@@ -341,7 +343,12 @@ func B() {
 				}
 			}
 		}
-		rot = (rot + rRot) % 4
+		if rot == Up {
+			posY--
+		}
+		if rot == Left {
+			posX--
+		}
 		//fmt.Println(posX, posY)
 		//printPos(board, posX, posY, rot)
 	}
@@ -385,9 +392,7 @@ func B() {
 				if reverseIfInWall() {
 					return
 				}
-				if x != 0 {
-					moveRot(x + 1)
-				}
+				moveRot(x)
 				return
 			}
 
@@ -404,9 +409,7 @@ func B() {
 				if reverseIfInWall() {
 					return
 				}
-				if x != 0 {
-					moveRot(x + 1)
-				}
+				moveRot(-x)
 				return
 			}
 
@@ -423,9 +426,7 @@ func B() {
 				if reverseIfInWall() {
 					return
 				}
-				if y != 0 {
-					moveRot(y + 1)
-				}
+				moveRot(y)
 				return
 			}
 
@@ -442,9 +443,7 @@ func B() {
 				if reverseIfInWall() {
 					return
 				}
-				if y != 0 {
-					moveRot(y + 1)
-				}
+				moveRot(-y)
 				return
 			}
 
@@ -452,12 +451,18 @@ func B() {
 				return
 			}
 		}
+		//printPos(board, posX, posY, rot)
 	}
 
 	re := regexp.MustCompile(`\d+|[LR]`)
 
+	//printPos(board, posX, posY, rot)
 	for _, i := range re.FindAllStringSubmatch(instructions, -1) {
 		instr := i[0]
+		//fmt.Printf("[%d] %s\n", ii, instr)
+		//if ii > 991 {
+		//	printPos(board, posX, posY, rot)
+		//}
 		if instr == "L" {
 			rot = (rot - 1 + 4) % 4
 		} else if instr == "R" {
